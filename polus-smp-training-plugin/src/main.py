@@ -148,9 +148,11 @@ if __name__=="__main__":
             verbose=False
         )
 
+        last_val_accuracy = -1E5
+        patience = 3
         # train and save model
         for i in range(0, epochs):
-            logger.info(' \n ----- Epoch: {} -----'.format(i))
+            logger.info('----- Epoch: {} -----'.format(i))
             train_logs = train_epoch.run(train_loader)
             valid_logs = valid_epoch.run(val_loader)
 
@@ -160,6 +162,17 @@ if __name__=="__main__":
             logger.info('Train logs --- ' + train_str)
             logger.info('Val logs --- ' + val_str)
 
+            # early stopping
+            val_accuracy = valid_logs[metric_class[0].__name__]
+            if val_accuracy > last_val_accuracy:
+                val_count = 0
+                last_val_accuracy = val_accuracy
+            else:
+                val_count += 1
+            
+            if val_count >= patience:
+                logger.info('executing early stopping..')
+                break
 
         # save model
         logger.info('saving model...')
