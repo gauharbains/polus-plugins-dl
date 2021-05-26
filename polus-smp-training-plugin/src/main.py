@@ -127,6 +127,9 @@ if __name__=="__main__":
             activation='sigmoid'                   
         )
 
+        # device
+        dev = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+
         # optimizer
         optimizer = torch.optim.Adam([ 
         dict(params=model.parameters(), lr=0.0001),
@@ -138,6 +141,7 @@ if __name__=="__main__":
             loss=loss_class, 
             metrics=metric_class, 
             optimizer=optimizer,
+            device=dev,
             verbose=False
         )
 
@@ -145,6 +149,7 @@ if __name__=="__main__":
             model, 
             loss=loss_class, 
             metrics=metric_class, 
+            device=dev,
             verbose=False
         )
 
