@@ -13,6 +13,8 @@ from torch.utils.data import DataLoader
 from utils.params import models_dict,loss_dict, metric_dict
 from segmentation_models_pytorch.utils.base import Activation
 
+tile_size = 256
+
 if __name__=="__main__":
     # Initialize the logger
     logging.basicConfig(format='%(asctime)s - %(name)-8s - %(levelname)-8s - %(message)s',
@@ -57,7 +59,7 @@ if __name__=="__main__":
     logger.info('modelName = {}'.format(modelName))
     encoderName = args.encoderName if args.encoderName!=None else 'resnet34'
     logger.info('encoderName = {}'.format(encoderName))
-    encoderWeights = None if args.encoderWeights=='random' else 'imagenet'
+    encoderWeights = 'imagenet' if args.encoderWeights=='imagenet' else None
     logger.info('encoderWeights = {}'.format(encoderWeights))
     imagesPattern = args.imagesPattern
     logger.info('imagesPattern = {}'.format(imagesPattern))
@@ -77,7 +79,7 @@ if __name__=="__main__":
     logger.info('loss = {}'.format(loss))
     metric = args.metric if args.metric!=None else 'IoU'
     logger.info('metric = {}'.format(metric))
-    batchSize = int(args.batchSize) if args.batchSize!=None else 8
+    batchSize = int(args.batchSize) if args.batchSize!=None else None
     logger.info('batchSize = {}'.format(batchSize))
     trainValSplit = float(args.trainValSplit) if args.trainValSplit!=None else 0.7
     logger.info('trainValSplit = {}'.format(trainValSplit))
@@ -102,13 +104,6 @@ if __name__=="__main__":
         train_tile_map = dl.get_tile_mapping(train_names)
         val_tile_map = dl.get_tile_mapping(val_names)
 
-        # initialize datalaoder
-        logger.info('Initializing dataloader')
-        train_data = dl.Dataset(train_map, train_tile_map)
-        val_data = dl.Dataset(val_map, val_tile_map)
-        train_loader = DataLoader(train_data, batch_size=batchSize)
-        val_loader = DataLoader(val_data, batch_size=batchSize)
-
         # intiliaze model and training parameters
         logger.info('Initializing model,loss,metric')
         model_class = models_dict[modelName]
@@ -122,6 +117,19 @@ if __name__=="__main__":
             classes=1,   
             activation='sigmoid'                   
         )
+
+        # get max_batch size if needed
+        if torch.cuda.is_available() and batchSize == None:
+            logger.info('No batchSize was specified, calculating max size possible')
+            batchSize = dl.get_max_batch_size(model,tile_size,0)
+            logger.info('max batch size: {}'.format(batchSize))
+            
+        # initialize datalaoder
+        logger.info('Initializing dataloader')
+        train_data = dl.Dataset(train_map, train_tile_map)
+        val_data = dl.Dataset(val_map, val_tile_map)
+        train_loader = DataLoader(train_data, batch_size=batchSize)
+        val_loader = DataLoader(val_data, batch_size=batchSize)
 
         # device
         dev = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")

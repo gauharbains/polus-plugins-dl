@@ -4,6 +4,7 @@ import numpy as np
 import filepattern
 import torch 
 import torchvision
+import gpustat
 import segmentation_models_pytorch as smp
 from bfio import BioReader, BioWriter
 from torch.utils.data import DataLoader
@@ -64,6 +65,37 @@ def get_tile_mapping(image_names):
                     tile_map[tile_num] = (file_name, (x,x_max), (y,y_max))
                     tile_num+=1
     return tile_map
+
+
+def get_max_batch_size(model, tile_size, device):
+    """get max possible batch_size based on GPU memory
+    This function calculates the maximum possible batch
+    size based on the available GPU memory. 
+
+    Args:
+        model (pytorch model): model to train
+        tile_size (int): size of the input image tile
+        device (int): device id
+
+    Returns:
+        int: max possible batch size
+    """
+
+    # get number of trainable parameters
+    total_param = 0
+    for name, param in model.named_parameters():
+        if param.requires_grad:
+            num_param = np.prod(param.size())
+            total_param += num_param
+    
+    # get available GPU memory
+    gpu_stats = gpustat.GPUStatCollection.new_query()
+    item = gpu_stats.jsonify()["gpus"][device]
+    gpu_mem = (item["memory.total"] - item["memory.used"])*1E6*1.04858
+
+    # max batch size
+    max_batch_size = int(gpu_mem/(6*(total_param+tile_size*tile_size)))
+    return max_batch_size
 
 
 class Dataset(BaseDataset):
