@@ -31,8 +31,6 @@ if __name__=="__main__":
                         help='encoder to use', required=False)
     parser.add_argument('--encoderWeights', dest='encoderWeights', type=str,
                         help='Pretrained weights for the encoder', required=False)
-    parser.add_argument('--epochs', dest='epochs', type=str,
-                        help='Number of training epochs', required=False)
     parser.add_argument('--imagesPattern', dest='imagesPattern', type=str,
                         help='Filename pattern for images', required=True)
     parser.add_argument('--labelsPattern', dest='labelsPattern', type=str,
@@ -59,10 +57,8 @@ if __name__=="__main__":
     logger.info('modelName = {}'.format(modelName))
     encoderName = args.encoderName if args.encoderName!=None else 'resnet34'
     logger.info('encoderName = {}'.format(encoderName))
-    encoderWeights = args.encoderWeights if args.encoderWeights!=None else 'imagenet'
+    encoderWeights = None if args.encoderWeights=='random' else 'imagenet'
     logger.info('encoderWeights = {}'.format(encoderWeights))
-    epochs = int(args.epochs) if args.epochs!=None else 10
-    logger.info('epochs = {}'.format(epochs))
     imagesPattern = args.imagesPattern
     logger.info('imagesPattern = {}'.format(imagesPattern))
     labelsPattern = args.labelsPattern
@@ -154,9 +150,11 @@ if __name__=="__main__":
         )
 
         last_val_accuracy = -1E5
-        patience = 3
+        patience = 5
+        i = 0
         # train and save model
-        for i in range(0, epochs):
+        while True:
+            i+=1
             logger.info('----- Epoch: {} -----'.format(i))
             train_logs = train_epoch.run(train_loader)
             valid_logs = valid_epoch.run(val_loader)

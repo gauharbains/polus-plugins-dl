@@ -1,6 +1,6 @@
 {
     "name": "SMP Training",
-    "version": "0.1.2debug4",
+    "version": "0.1.2debug5",
     "title": "SMP Training",
     "description": "Segmentation models training plugin",
     "author": "Gauhar Bains (gauhar.bains@labshare.org)",
@@ -8,7 +8,7 @@
     "repository": "https://github.com/labshare/polus-plugins",
     "website": "https://ncats.nih.gov/preclinical/core/informatics",
     "citation": "",
-    "containerId": "labshare/polus-smp-training-plugin:0.1.2debug4",
+    "containerId": "labshare/polus-smp-training-plugin:0.1.2debug5",
     "inputs": [
       {
         "name": "modelName",
@@ -36,14 +36,14 @@
       },
       {
         "name": "encoderWeights",
-        "type": "string",
-        "description": "Pretrained weights for the encoder",
-        "required": false
+        "type": "enum",
+        "options": {
+          "values": [
+              "imagenet",
+              "random"
+          ]
       },
-      {
-        "name": "epochs",
-        "type": "number",
-        "description": "Number of training epochs",
+        "description": "Pretrained weights for the encoder",
         "required": false
       },
       {
@@ -132,11 +132,6 @@
         "key": "inputs.encoderWeights",
         "title": "Encoder Weights",
         "description": "Pretrained weights for the encoder"
-      },
-      {
-        "key": "inputs.epochs",
-        "title": "Epochs",
-        "description": "Number of training epochs"
       },
       {
         "key": "inputs.imagesPattern",
