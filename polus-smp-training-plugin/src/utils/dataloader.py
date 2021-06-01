@@ -94,7 +94,7 @@ def get_max_batch_size(model, tile_size, device):
     gpu_mem = (item["memory.total"] - item["memory.used"])*1E6*1.04858
 
     # max batch size
-    max_batch_size = int(gpu_mem/(6*(total_param+tile_size*tile_size)))
+    max_batch_size = int(gpu_mem/(6*(total_param+tile_size*tile_size))) - 1
     return max_batch_size
 
 
