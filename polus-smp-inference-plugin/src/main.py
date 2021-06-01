@@ -76,9 +76,13 @@ if __name__=="__main__":
 
     # Surround with try/finally for proper error catching
     try:
+        # device
+        dev = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+        logger.info('using device: {}'.format(dev))
+
         # load model
         logger.info('loading pretrained model')
-        model = torch.load(model_path)
+        model = torch.load(model_path).to(dev)
         model.eval()
 
         fp = filepattern.FilePattern(file_path=inpDir, pattern=pattern)
@@ -107,10 +111,10 @@ if __name__=="__main__":
                         
                         # preprocess image
                         img = img.astype(np.float32)
-                        img = preprocess(img).unsqueeze(0)
+                        img = preprocess(img).unsqueeze(0).to(dev)
 
                         with torch.no_grad():
-                            out = model(img).numpy()
+                            out = model(img).cpu().numpy()
                         
                         # postpreocessing and write tile
                         out[out>=0.5] = 255
