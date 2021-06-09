@@ -1,6 +1,6 @@
 {
     "name": "SMP Training",
-    "version": "0.1.2debug7",
+    "version": "0.1.3debug1",
     "title": "SMP Training",
     "description": "Segmentation models training plugin",
     "author": "Gauhar Bains (gauhar.bains@labshare.org)",
@@ -8,8 +8,14 @@
     "repository": "https://github.com/labshare/polus-plugins",
     "website": "https://ncats.nih.gov/preclinical/core/informatics",
     "citation": "",
-    "containerId": "labshare/polus-smp-training-plugin:0.1.2debug7",
+    "containerId": "labshare/polus-smp-training-plugin:0.1.3debug1",
     "inputs": [
+      {
+        "name": "pretrainedModel",
+        "type": "genericData",
+        "description": "Pretrained model path",
+        "required": true
+      },
       {
         "name": "modelName",
         "type": "enum",
@@ -118,6 +124,11 @@
       }
     ],
     "ui": [
+      {
+        "key": "inputs.modelPath",
+        "title": "Pre-Trained Model",
+        "description": "Pretrained model to use"
+      },
       {
         "key": "inputs.modelName",
         "title": "Model Name",

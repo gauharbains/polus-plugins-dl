@@ -27,6 +27,8 @@ if __name__=="__main__":
     parser = argparse.ArgumentParser(prog='main', description='Segmentation models training plugin')
     
     # Input arguments
+    parser.add_argument('--pretrainedModel', dest='pretrainedModel', type=str,
+                        help='path to pretrained model', required=False)
     parser.add_argument('--modelName', dest='modelName', type=str,
                         help='model to use', required=False)
     parser.add_argument('--encoderName', dest='encoderName', type=str,
@@ -55,11 +57,16 @@ if __name__=="__main__":
     
     # Parse the arguments
     args = parser.parse_args()
+    pretrainedModel = args.pretrainedModel 
+    logger.info('pretrainedModel = {}'.format(pretrainedModel))
     modelName = args.modelName if args.modelName!=None else 'unet'
+    modelName = modelName if pretrainedModel==None else None
     logger.info('modelName = {}'.format(modelName))
     encoderName = args.encoderName if args.encoderName!=None else 'resnet34'
+    encoderName = encoderName if pretrainedModel==None else None
     logger.info('encoderName = {}'.format(encoderName))
     encoderWeights = 'imagenet' if args.encoderWeights=='imagenet' else None
+    encoderWeights = encoderWeights if pretrainedModel==None else None
     logger.info('encoderWeights = {}'.format(encoderWeights))
     imagesPattern = args.imagesPattern
     logger.info('imagesPattern = {}'.format(imagesPattern))
@@ -86,6 +93,14 @@ if __name__=="__main__":
     outDir = args.outDir
     logger.info('outDir = {}'.format(outDir))
 
+    # if pretrained model is provided
+    if pretrainedModel != None:
+        checkpoint = torch.load(Path(pretrainedModel).joinpath('checkpoint.pt'))
+        modelName = checkpoint['model']
+        encoderName = checkpoint['encoder']
+        encoderWeights = None
+        epoch = checkpoint['epoch']
+        
     # Surround with try/finally for proper error catching
     try:
         images_fp = filepattern.FilePattern(file_path=imagesDir, pattern=imagesPattern)
@@ -140,6 +155,11 @@ if __name__=="__main__":
         dict(params=model.parameters(), lr=0.0001),
         ])
 
+        # load model state and optimizer state 
+        if pretrainedModel:
+            model.load_state_dict(checkpoint['model_state_dict'])
+            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+
         # train and val iterator
         train_epoch = smp.utils.train.TrainEpoch(
             model, 
@@ -165,6 +185,9 @@ if __name__=="__main__":
         while True:
             i+=1
             logger.info('----- Epoch: {} -----'.format(i))
+            if pretrainedModel:
+                logger.info('Pretrained + current epochs = {}'.format(epoch+i))
+
             train_logs = train_epoch.run(train_loader)
             valid_logs = valid_epoch.run(val_loader)
 
@@ -185,10 +208,21 @@ if __name__=="__main__":
             if val_count >= patience:
                 logger.info('executing early stopping..')
                 break
-
+            
         # save model
         logger.info('saving model...')
         torch.save(model, Path(outDir).joinpath('out_model.pth'))
+
+        # save checkpoint
+        checkpoint = {
+            'model': modelName,
+            'encoder': encoderName,
+            'epoch': i,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict()
+        }
+        torch.save(checkpoint, Path(outDir).joinpath('checkpoint.pt'))
+
 
     except Exception:
         traceback.print_exc()
