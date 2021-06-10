@@ -8,22 +8,23 @@ import torchvision
 from preprocess import LocalNorm
 import filepattern
 
-tile_size = 1024
+TILE_SIZE = 1024
+TILE_OVERLAP = 256
 
-def pad_image(img, out_shape=(tile_size,tile_size)):
+def pad_image(img, multiple=128):
     """Pad input image to make it a certain zie
 
     Args:
         img (array): input image
-        out_shape (tuple, optional): Desired output shape
+        multiple (int, optional): make size a multiple of
 
     Returns:
         array: padded image
         tuple: tuple consisting of pad dimensions
     """
 
-    pad_x = img.shape[0] - out_shape[0]
-    pad_y = img.shape[1] - out_shape[1]
+    pad_x = multiple - (img.shape[0]%multiple) if img.shape[0]%multiple!=0 else 0
+    pad_y = multiple - (img.shape[1]%multiple) if img.shape[1]%multiple!=0 else 0
     padded_img = np.pad(img, [(0,pad_x),(0,pad_y)], mode='reflect') 
     return padded_img, (pad_x,pad_y)
 
@@ -97,16 +98,24 @@ if __name__=="__main__":
                 bw.dtype = np.uint8
                 
                 # iterate over tiles
-                for x in range(0,br.X,tile_size):
-                    x_max = min([br.X,x+tile_size])
+                for x in range(0,br.X,TILE_SIZE):
+                    x_min = max([0,x-TILE_OVERLAP])
+                    x_max = min([br.X,x+TILE_SIZE+TILE_OVERLAP])
+                    x_left_trim = x-x_min
+                    x_right_trim = x_max - min([br.X,x+TILE_SIZE])
 
-                    for y in range(0,br.Y,tile_size):
-                        y_max = min([br.Y,y+tile_size])
-                        img = br[y:y_max,x:x_max,0:1,0,0][:,:,0,0,0]
+                    for y in range(0,br.Y,TILE_SIZE):
+                        y_min = max([0,y-TILE_OVERLAP])
+                        y_max = min([br.Y,y+TILE_SIZE+TILE_OVERLAP])
+                        y_left_trim = y-y_min
+                        y_right_trim = y_max - min([br.Y,y+TILE_SIZE])
 
-                        # pad image if required
+                        # read image
+                        img = br[y_min:y_max,x_min:x_max,0:1,0,0][:,:,0,0,0]
+
+                        # pad image if required to make dimensions a multiple of 128
                         pad_dims = None
-                        if not (img.shape[0]//tile_size==1 and img.shape[1]//tile_size==1):
+                        if not (img.shape[0]%128==0 and img.shape[1]%128==0):
                             img, pad_dims = pad_image(img)
                         
                         # preprocess image
@@ -120,7 +129,8 @@ if __name__=="__main__":
                         out[out>=0.5] = 255
                         out[out<0.5] = 0
                         out = out[0,0,:-pad_dims[0],:-pad_dims[1]] if pad_dims!=None else out[0,0,:,:]
-                        bw[y:y_max,x:x_max,0:1,0,0] = out.astype(np.uint8)
+                        out = out[y_left_trim:out.shape[0]-y_right_trim, x_left_trim:out.shape[1]-x_right_trim]
+                        bw[y:min([br.Y,y+TILE_SIZE]),x:min([br.X,x+TILE_SIZE]),0:1,0,0] = out.astype(np.uint8)
 
     except Exception:
         traceback.print_exc()
