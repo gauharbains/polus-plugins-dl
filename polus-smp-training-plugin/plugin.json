@@ -125,7 +125,7 @@
     ],
     "ui": [
       {
-        "key": "inputs.modelPath",
+        "key": "inputs.pretrainedModel",
         "title": "Pre-Trained Model",
         "description": "Pretrained model to use"
       },
