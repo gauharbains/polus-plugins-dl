@@ -67,7 +67,7 @@ def get_tile_mapping(image_names):
     return tile_map
 
 
-def get_max_batch_size(model, tile_size, device):
+def get_max_batch_size(model, tile_size, device, classes):
     """get max possible batch_size based on GPU memory
     This function calculates the maximum possible batch
     size based on the available GPU memory. 
@@ -94,7 +94,7 @@ def get_max_batch_size(model, tile_size, device):
     gpu_mem = (item["memory.total"] - item["memory.used"])*1E6*1.04858
 
     # max batch size
-    max_batch_size = int(gpu_mem/(6*(total_param+tile_size*tile_size))) - 1
+    max_batch_size = int(gpu_mem/(8*classes*(total_param+tile_size*tile_size))) - 1
     if max_batch_size < 1:
         max_batch_size = 1
     return max_batch_size
@@ -104,11 +104,14 @@ class Dataset(BaseDataset):
     
     def __init__(self,
         image_label_map,
-        tile_map
+        tile_map,
+        classes
     ):
 
         self.image_label_map = image_label_map
         self.tile_map = tile_map
+        self.classes = classes
+        self.backend = 'python' if classes==1 else 'zarr'
         self.preprocessing = torchvision.transforms.Compose([
                              torchvision.transforms.ToTensor(),
                              LocalNorm()])
@@ -120,18 +123,19 @@ class Dataset(BaseDataset):
 
         # read and preprocess image
         with BioReader(image_name) as br:
-            img = br[y:y_max,x:x_max,0:1,0,0][:,:,0,0,0]
+            img = br[y:y_max,x:x_max,0,0,0]
         img = img.astype(np.float32)
         img = self.preprocessing(img).numpy()
 
         # read and preprocess label
         label_name = self.image_label_map[image_name]
-        with BioReader(label_name) as br:
-            label = br[y:y_max,x:x_max,0:1,0,0][:,:,0,0,0]      
-        label[label>=1] = 1
-        label[label<1] = 0
+        with BioReader(label_name, backend=self.backend) as br:
+            label = br[y:y_max,x:x_max,0,:self.classes,0] 
+        if self.classes == 1: 
+            label[label>=1] = 1
+            label[label<1] = 0
         label = label.astype(np.float32)
-        label = label.reshape((1,label.shape[0], label.shape[1]))
+        label = label.reshape((self.classes,label.shape[0], label.shape[1]))
         return img, label
         
     def __len__(self):

@@ -27,6 +27,8 @@ if __name__=="__main__":
     parser = argparse.ArgumentParser(prog='main', description='Segmentation models training plugin')
     
     # Input arguments
+    parser.add_argument('--segmentationType', dest='segmentationType', type=str,
+                        help='segmentation type', required=True)
     parser.add_argument('--pretrainedModel', dest='pretrainedModel', type=str,
                         help='path to pretrained model', required=False)
     parser.add_argument('--modelName', dest='modelName', type=str,
@@ -42,7 +44,9 @@ if __name__=="__main__":
     parser.add_argument('--imagesDir', dest='imagesDir', type=str,
                         help='Collection containing images', required=True)
     parser.add_argument('--labelsDir', dest='labelsDir', type=str,
-                        help='Collection containing labels', required=True)
+                        help='Collection containing labels', required=False)
+    parser.add_argument('--flowfieldDir', dest='flowfieldDir', type=str,
+                        help='Collection containing vector fields', required=False)
     parser.add_argument('--loss', dest='loss', type=str,
                         help='Loss function', required=False)
     parser.add_argument('--metric', dest='metric', type=str,
@@ -57,6 +61,8 @@ if __name__=="__main__":
     
     # Parse the arguments
     args = parser.parse_args()
+    segmentationType = args.segmentationType 
+    logger.info('segmentationType = {}'.format(segmentationType))
     pretrainedModel = args.pretrainedModel 
     logger.info('pretrainedModel = {}'.format(pretrainedModel))
     modelName = args.modelName if args.modelName!=None else 'unet'
@@ -78,10 +84,13 @@ if __name__=="__main__":
         fpath = str(Path(args.imagesDir).joinpath('images').absolute())
     logger.info('imagesDir = {}'.format(imagesDir))
     labelsDir = args.labelsDir
-    if (Path.is_dir(Path(args.labelsDir).joinpath('images'))):
-        # switch to images folder if present
-        fpath = str(Path(args.labelsDir).joinpath('images').absolute())
+    if labelsDir != None:
+        if (Path.is_dir(Path(args.labelsDir).joinpath('images'))):
+            # switch to images folder if present
+            fpath = str(Path(args.labelsDir).joinpath('images').absolute())
     logger.info('labelsDir = {}'.format(labelsDir))
+    flowfieldDir = args.flowfieldDir
+    logger.info('flowfieldDir = {}'.format(flowfieldDir))
     loss = args.loss if args.loss!=None else 'Dice'
     logger.info('loss = {}'.format(loss))
     metric = args.metric if args.metric!=None else 'IoU'
@@ -100,6 +109,13 @@ if __name__=="__main__":
         encoderName = checkpoint['encoder']
         encoderWeights = None
         epoch = checkpoint['epoch']
+
+    # changes based on segmentation type
+    labelsDir = labelsDir if segmentationType == 'Binary' else flowfieldDir
+    classes = 1 if segmentationType == 'Binary' else 3
+    activation = 'sigmoid' if segmentationType == 'Binary' else None
+    logger.info('classes: {}'.format(classes))
+    logger.info('activation: {}'.format(activation))
         
     # Surround with try/finally for proper error catching
     try:
@@ -129,20 +145,21 @@ if __name__=="__main__":
             encoder_name=encoderName,        
             encoder_weights=encoderWeights,     
             in_channels=1,                  
-            classes=1,   
-            activation='sigmoid'                   
+            classes=classes,   
+            activation=activation                   
         )
 
         # get max_batch size if needed
         if torch.cuda.is_available() and batchSize == None:
             logger.info('No batchSize was specified, calculating max size possible')
-            batchSize = dl.get_max_batch_size(model,tile_size,0)
+            batchSize = dl.get_max_batch_size(model=model, tile_size=tile_size,
+                                              device=0, classes=classes)
             logger.info('max batch size: {}'.format(batchSize))
             
         # initialize datalaoder
         logger.info('Initializing dataloader')
-        train_data = dl.Dataset(train_map, train_tile_map)
-        val_data = dl.Dataset(val_map, val_tile_map)
+        train_data = dl.Dataset(train_map, train_tile_map, classes)
+        val_data = dl.Dataset(val_map, val_tile_map, classes)
         train_loader = DataLoader(train_data, batch_size=batchSize)
         val_loader = DataLoader(val_data, batch_size=batchSize)
 

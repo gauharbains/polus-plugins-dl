@@ -1,6 +1,6 @@
 {
     "name": "SMP Training",
-    "version": "0.1.3debug1",
+    "version": "0.1.3debug2",
     "title": "SMP Training",
     "description": "Segmentation models training plugin",
     "author": "Gauhar Bains (gauhar.bains@labshare.org)",
@@ -8,12 +8,24 @@
     "repository": "https://github.com/labshare/polus-plugins",
     "website": "https://ncats.nih.gov/preclinical/core/informatics",
     "citation": "",
-    "containerId": "labshare/polus-smp-training-plugin:0.1.3debug1",
+    "containerId": "labshare/polus-smp-training-plugin:0.1.3debug2",
     "inputs": [
       {
         "name": "pretrainedModel",
         "type": "genericData",
         "description": "Pretrained model path",
+        "required": true
+      },
+      {
+        "name": "segmentationType",
+        "type": "enum",
+        "options": {
+          "values": [
+              "Binary",
+              "Cellpose"
+          ]
+      },
+        "description": "Type of segmentation",
         "required": true
       },
       {
@@ -77,6 +89,12 @@
         "required": true
       },
       {
+        "name": "flowfieldDir",
+        "type": "genericData",
+        "description": "Collection containing flowfields",
+        "required": true
+      },
+      {
         "name": "loss",
         "type": "enum",
         "options": {
@@ -125,6 +143,11 @@
     ],
     "ui": [
       {
+        "key": "inputs.segmentationType",
+        "title": "Segmentation Type",
+        "description": "Segmentation Type"
+      },
+      {
         "key": "inputs.pretrainedModel",
         "title": "Pre-Trained Model",
         "description": "Pretrained model to use"
@@ -163,6 +186,11 @@
         "key": "inputs.labelsDir",
         "title": "Labels collection",
         "description": "Collection containing labels"
+      },
+      {
+        "key": "inputs.flowfieldDir",
+        "title": "Flowfield Dir",
+        "description": "Collection containing vector flow fields"
       },
       {
         "key": "inputs.loss",
