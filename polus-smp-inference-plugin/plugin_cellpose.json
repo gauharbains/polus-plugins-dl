@@ -1,5 +1,5 @@
 {
-    "name": "SMP Inference",
+    "name": "SMP Inference Cellpose",
     "version": "0.1.3Debug1",
     "title": "SMP Inference",
     "description": "Segmentation models inference plugin",
@@ -14,6 +14,17 @@
         "name": "pattern",
         "type": "string",
         "description": "Filename pattern used to separate data",
+        "required": true
+      },
+      {
+        "name": "segmentationType",
+        "type": "enum",
+        "options": {
+          "values": [
+              "Cellpose"
+          ]
+      },
+        "description": "Type of segmentation",
         "required": true
       },
       {
@@ -32,11 +43,16 @@
     "outputs": [
       {
         "name": "outDir",
-        "type": "collection",
+        "type": "genericData",
         "description": "Output collection"
       }
     ],
     "ui": [
+      {
+        "key": "inputs.segmentationType",
+        "title": "Segmentation Type",
+        "description": "Segmentation Type"
+      },
       {
         "key": "inputs.pattern",
         "title": "Filename pattern",

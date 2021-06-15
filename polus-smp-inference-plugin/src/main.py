@@ -28,6 +28,27 @@ def pad_image(img, multiple=128):
     padded_img = np.pad(img, [(0,pad_x),(0,pad_y)], mode='reflect') 
     return padded_img, (pad_x,pad_y)
 
+def postprocess(out_img, segmentationType):
+    """postprocessing the output image
+
+    Args:
+        out_img (array): output image
+        segmentationType (str): segmentation type
+
+    Returns:
+        [array]: output image after poat processing
+    """
+    # reshape output
+    c,x,y = out_img.shape
+    out_img = out_img.reshape((x,y,1,c))
+
+    # binary segmentation used sigmoid activation
+    if segmentationType == 'Binary':
+        out_img[out_img>=0.5] = 255
+        out_img[out_img<0.5] = 0
+    
+    return out_img
+
     
 if __name__=="__main__":
     # Initialize the logger
@@ -47,6 +68,8 @@ if __name__=="__main__":
                         help='Input image collection to be processed by this plugin', required=True)
     parser.add_argument('--modelPath', dest='modelPath', type=str,
                         help='pretrained model to use', required=True)
+    parser.add_argument('--segmentationType', dest='segmentationType', type=str,
+                        help='Segmentation Type', required=True)
 
     # Output arguments
     parser.add_argument('--outDir', dest='outDir', type=str,
@@ -63,6 +86,8 @@ if __name__=="__main__":
         # switch to images folder if present
         fpath = str(Path(args.inpDir).joinpath('images').absolute())
     logger.info('inpDir = {}'.format(inpDir))
+    segmentationType = args.segmentationType
+    logger.info('segmentationType = {}'.format(segmentationType))
     outDir = args.outDir
     logger.info('outDir = {}'.format(outDir))
 
@@ -74,6 +99,11 @@ if __name__=="__main__":
            torchvision.transforms.ToTensor(),
            LocalNorm() 
            ])
+
+    # change based on segmentation type
+    out_dtype = np.uint8 if segmentationType=='Binary' else np.float32
+    backend = 'python' if segmentationType=='Binary' else 'zarr'
+    classes = 1 if segmentationType=='Binary' else 3
 
     # Surround with try/finally for proper error catching
     try:
@@ -92,10 +122,11 @@ if __name__=="__main__":
         for f in fp():
             file_name = f[0]['file']
             logger.info('Processing image: {}'.format(file_name.name))
+            out_file_name = file_name if segmentationType=='Binary' else file_name.replace('ome.tif', 'ome.zarr')
 
             with BioReader(file_name) as br, \
-                 BioWriter(Path(outDir).joinpath(Path(file_name).name), metadata=br.metadata) as bw:
-                bw.dtype = np.uint8
+                 BioWriter(Path(outDir).joinpath(Path(out_file_name).name), metadata=br.metadata, backend=backend) as bw:
+                bw.dtype = out_dtype
                 
                 # iterate over tiles
                 for x in range(0,br.X,TILE_SIZE):
@@ -111,7 +142,7 @@ if __name__=="__main__":
                         y_right_trim = y_max - min([br.Y,y+TILE_SIZE])
 
                         # read image
-                        img = br[y_min:y_max,x_min:x_max,0:1,0,0][:,:,0,0,0]
+                        img = br[y_min:y_max,x_min:x_max,0,0,0]
 
                         # pad image if required to make dimensions a multiple of 128
                         pad_dims = None
@@ -125,12 +156,11 @@ if __name__=="__main__":
                         with torch.no_grad():
                             out = model(img).cpu().numpy()
                         
-                        # postpreocessing and write tile
-                        out[out>=0.5] = 255
-                        out[out<0.5] = 0
-                        out = out[0,0,:-pad_dims[0],:-pad_dims[1]] if pad_dims!=None else out[0,0,:,:]
-                        out = out[y_left_trim:out.shape[0]-y_right_trim, x_left_trim:out.shape[1]-x_right_trim]
-                        bw[y:min([br.Y,y+TILE_SIZE]),x:min([br.X,x+TILE_SIZE]),0:1,0,0] = out.astype(np.uint8)
+                        # postprocessing and write tile
+                        out = out[0,:classes,:-pad_dims[0],:-pad_dims[1]] if pad_dims!=None else out[0,0,:,:]
+                        out = out[:,y_left_trim:out.shape[0]-y_right_trim, x_left_trim:out.shape[1]-x_right_trim]
+                        out = postprocess(out, segmentationType)
+                        bw[y:min([br.Y,y+TILE_SIZE]),x:min([br.X,x+TILE_SIZE]),0,:classes,0] = out
 
     except Exception:
         traceback.print_exc()
