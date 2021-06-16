@@ -46,7 +46,6 @@ def postprocess(out_img, segmentationType):
     if segmentationType == 'Binary':
         out_img[out_img>=0.5] = 255
         out_img[out_img<0.5] = 0
-    
     return out_img
 
     
@@ -122,12 +121,15 @@ if __name__=="__main__":
         for f in fp():
             file_name = f[0]['file']
             logger.info('Processing image: {}'.format(file_name.name))
-            out_file_name = file_name if segmentationType=='Binary' else file_name.replace('ome.tif', 'ome.zarr')
+            out_file_name = file_name if segmentationType=='Binary' else Path(str(file_name).replace('ome.tif', 'ome.zarr'))
 
             with BioReader(file_name) as br, \
                  BioWriter(Path(outDir).joinpath(Path(out_file_name).name), metadata=br.metadata, backend=backend) as bw:
                 bw.dtype = out_dtype
-                
+                bw.C = classes
+                if classes == 3:
+                    bw.cnames = ['cell_probability', 'x', 'y']
+
                 # iterate over tiles
                 for x in range(0,br.X,TILE_SIZE):
                     x_min = max([0,x-TILE_OVERLAP])
@@ -157,8 +159,8 @@ if __name__=="__main__":
                             out = model(img).cpu().numpy()
                         
                         # postprocessing and write tile
-                        out = out[0,:classes,:-pad_dims[0],:-pad_dims[1]] if pad_dims!=None else out[0,0,:,:]
-                        out = out[:,y_left_trim:out.shape[0]-y_right_trim, x_left_trim:out.shape[1]-x_right_trim]
+                        out = out[0,:classes,:-pad_dims[0],:-pad_dims[1]] if pad_dims!=None else out[0,:classes,:,:]
+                        out = out[:,y_left_trim:out.shape[1]-y_right_trim, x_left_trim:out.shape[2]-x_right_trim]
                         out = postprocess(out, segmentationType)
                         bw[y:min([br.Y,y+TILE_SIZE]),x:min([br.X,x+TILE_SIZE]),0,:classes,0] = out
 
