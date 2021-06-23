@@ -162,7 +162,7 @@ if __name__=="__main__":
                         out = out[0,:classes,:-pad_dims[0],:-pad_dims[1]] if pad_dims!=None else out[0,:classes,:,:]
                         out = out[:,y_left_trim:out.shape[1]-y_right_trim, x_left_trim:out.shape[2]-x_right_trim]
                         out = postprocess(out, segmentationType)
-                        bw[y:min([br.Y,y+TILE_SIZE]),x:min([br.X,x+TILE_SIZE]),0,:classes,0] = out
+                        bw[y:min([br.Y,y+TILE_SIZE]),x:min([br.X,x+TILE_SIZE]),0,:classes,0] = out.astype(out_dtype)
 
     except Exception:
         traceback.print_exc()

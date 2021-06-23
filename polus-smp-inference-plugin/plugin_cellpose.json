@@ -1,6 +1,6 @@
 {
     "name": "SMP Inference Cellpose",
-    "version": "0.1.3Debug2",
+    "version": "0.1.3Debug3",
     "title": "SMP Inference",
     "description": "Segmentation models inference plugin",
     "author": "Gauhar Bains (gauhar.bains@labshare.org)",
@@ -8,7 +8,7 @@
     "repository": "https://github.com/labshare/polus-plugins",
     "website": "https://ncats.nih.gov/preclinical/core/informatics",
     "citation": "",
-    "containerId": "labshare/polus-smp-inference-plugin:0.1.3Debug2",
+    "containerId": "labshare/polus-smp-inference-plugin:0.1.3Debug3",
     "inputs": [
       {
         "name": "pattern",
