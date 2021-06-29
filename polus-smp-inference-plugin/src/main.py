@@ -121,7 +121,7 @@ if __name__=="__main__":
         for f in fp():
             file_name = f[0]['file']
             logger.info('Processing image: {}'.format(file_name.name))
-            out_file_name = file_name if segmentationType=='Binary' else Path(str(file_name).replace('ome.tif', 'ome.zarr'))
+            out_file_name = file_name if segmentationType=='Binary' else Path(str(file_name).replace('.ome.tif', '_flow.ome.zarr'))
 
             with BioReader(file_name) as br, \
                  BioWriter(Path(outDir).joinpath(Path(out_file_name).name), metadata=br.metadata, backend=backend) as bw:
