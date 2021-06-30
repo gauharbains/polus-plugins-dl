@@ -19,7 +19,8 @@ metric_dict = {'IoU': smp.utils.metrics.IoU,
 
 
 loss_dict = {'Dice': losses.DiceLoss,
-        'Jaccard': losses.JaccardLoss}
+        'Jaccard': losses.JaccardLoss,
+        'MSE': losses.MSELoss}
 
 # add more dictionaries in the future for different inputs
 

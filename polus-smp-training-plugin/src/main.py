@@ -12,6 +12,7 @@ from bfio.bfio import BioReader, BioWriter
 from torch.utils.data import DataLoader
 from utils.params import models_dict,loss_dict, metric_dict
 from segmentation_models_pytorch.utils.base import Activation
+import segmentation_models_pytorch.utils.losses as losses
 
 tile_size = 256
 
@@ -195,7 +196,7 @@ if __name__=="__main__":
             verbose=False
         )
 
-        last_val_accuracy = -1E5
+        last_val_loss = 1E5
         patience = 5
         i = 0
         # train and save model
@@ -215,10 +216,11 @@ if __name__=="__main__":
             logger.info('Val logs --- ' + val_str)
 
             # early stopping
-            val_accuracy = valid_logs[metric_class[0].__name__]
-            if val_accuracy > last_val_accuracy:
+            val_loss = valid_logs[loss_class.__name__]
+
+            if val_loss < last_val_loss:
                 val_count = 0
-                last_val_accuracy = val_accuracy
+                last_val_loss = val_loss
             else:
                 val_count += 1
             

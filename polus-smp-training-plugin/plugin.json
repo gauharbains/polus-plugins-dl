@@ -1,6 +1,6 @@
 {
     "name": "SMP Training",
-    "version": "0.1.3debug2",
+    "version": "0.1.3debug3",
     "title": "SMP Training",
     "description": "Segmentation models training plugin",
     "author": "Gauhar Bains (gauhar.bains@labshare.org)",
@@ -8,7 +8,7 @@
     "repository": "https://github.com/labshare/polus-plugins",
     "website": "https://ncats.nih.gov/preclinical/core/informatics",
     "citation": "",
-    "containerId": "labshare/polus-smp-training-plugin:0.1.3debug2",
+    "containerId": "labshare/polus-smp-training-plugin:0.1.3debug3",
     "inputs": [
       {
         "name": "pretrainedModel",
@@ -100,7 +100,8 @@
         "options": {
           "values": [
               "Dice",
-              "Jaccard"
+              "Jaccard",
+              "MSE"
           ]
       },
         "description": "Loss function to use",
