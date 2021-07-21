@@ -24,7 +24,7 @@ If WIPP is running, navigate to the plugins page and add a new plugin. Paste the
 
 ## Options
 
-This plugin takes one input argument and one output argument:
+This plugin takes 14 input arguments and 1 output argument:
 
 | Name          | Description             | I/O    | Type   | Required | Default |
 |---------------|-------------------------|--------|--------|----------|---------|
@@ -32,7 +32,7 @@ This plugin takes one input argument and one output argument:
 | `--imagesDir` | Collection containing input images | Input | collection | Yes | - |
 | `--imagesPattern` | filepattern for input images | Input | string | Yes | - |
 | `--labelsPattern` | filepattern for ground truth | Input | string | Yes | - |
-| `--preTrainedModel` | pretrained model, if any| Input | genericData | no | None |
+| `--preTrainedModel` | pretrained model, if any| Input | genericData | No | None |
 | `--labelsDir` | path to binary labels | Input | collection | Yes for binary seg. | - |
 | `--flowfieldDir` | path to cellpose labels | Input | genericData | Yes for cellpose seg. | - |
 | `--modelName` | model to use | Input | string | No | unet|
