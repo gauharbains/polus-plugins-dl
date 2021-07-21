@@ -6,7 +6,7 @@ Contact [Gauhar Bains](mailto:gauhar.bains@labshare.org) or [Nick Schaub](mailto
 For more information on WIPP, visit the [official WIPP page](https://isg.nist.gov/deepzoomweb/software/wipp).
 
 ## Core Functionality
-The details and usage of the plugin is provided in the section below. The repository consists of twp plugin manifests, one each for binary and cellpose type segmentation but they both use the same codebase. 
+The details and usage of the plugin is provided in the section below. 
  
 - **Binary Segmentation**: The plugin can be use to train models for binary segmentation. To do this, select segmentationType as Binary and provide path to the binary labels in `labelsDir`.
 - **Cellpose Segmnetation**: This functionality is still a work in progress. To enable the plugin to train models for cellpose type segmentation, select segmentationType as Cellpose and provide path to ground truth vectors in `flowfieldDir`. 
